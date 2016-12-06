@@ -29,11 +29,14 @@ users.insert({email: 'test.user@gmail.com',
 // and alarms on these metrics
 // Alarm on any unexpected/programmer error.
 app.get("/buoy/list/", function (req, res) {
-    
+
+    // TODO - For demo just use hard coded user and rss search location and skip
+    // user managment.
     var user = users.findOne({ email:'test.user@gmail.com' });   
     var url = 'http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=40N&lon=73W&radius=100';
 
     request.getAsync(url, {timeout: 2000}).then(function (response) {
+         console.log(response);
         var data = response.body;
         if (response.statusCode !== 200) {
             res.send(500, 'Internal Error');
