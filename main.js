@@ -23,6 +23,11 @@ app.get("/buoy/list/", function (req, res) {
     // TODO - For demo just use hard coded user and rss search location and skip
     // user managment.
     var user = database.findUser(hardCodedUser);
+    if (!user) {
+        res.send(500, 'Internal Error');
+        console.error('user:' + hardCodedUser + ' does not exist.');
+        next();
+    }
     var url = 'http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=40N&lon=73W&radius=100';
 
     request.getAsync(url, {timeout: 2000}).then(function (response) {
