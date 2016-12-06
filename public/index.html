@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Buoy Demo</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script>
+            // keep local buoy list and last update time
+            var currentList;
+            var lastUpdate;
+            // Lets refresh if it's been more than 2 minutes
+            var timeout = 1000 * 60 * 2;
+            
+            var currentButtonId;
+            
+            function addFavorite (station) {
+                $.post( "buoy/favorite/add/" + station.id, function() {
+                }).done(function() {
+                    station.src = "\star_gold_32.png";
+                    station.setAttribute( "onclick", "javascript: removeFavorite(this);" );
+                    updateLocalList(station, true);
+                }).fail(function() {
+                    alert('Failure trying to add favorite.');
+                });
+            };
+            
+            function removeFavorite (station) {
+                $.post( "buoy/favorite/remove/" + station.id, function() {
+                }).done(function() {
+                    station.src = "\star_white_32.png";
+                    station.setAttribute( "onclick", "javascript: addFavorite(this);" );
+                    updateLocalList(station, false);
+                    if (currentButtonId === 'favorites') {
+                        getBuoyData(currentButtonId);
+                    }
+                }).fail(function() {
+                    alert('Failure trying to remove favorite.');
+                });
+            };
+            
+            function updateLocalList(station, isAddFavorite) {
+                for (var i = 0; i < currentList.items.length; i++) {
+                    if (currentList.items[i].stationId === station.id) {
+                        currentList.items[i].favorite = isAddFavorite;
+                        return;
+                    } 
+                }
+            }
+            
+            function getBuoyData(buttonId) {
+                // get buttons and set favoritesOnly flag
+                currentButtonId = buttonId;
+                var button = $('#' + buttonId);
+                var otherButton = $('#favorites');
+                var favoritesOnly = false;
+                if (buttonId === 'favorites') {
+                    favoritesOnly = true;
+                    otherButton = $('#all');
+                }
+                if (!lastUpdate || (Date.now() - lastUpdate > timeout)) {
+                    // Call api
+                    $.getJSON( 'buoy/list', function() {
+                        }).done(function(results) {
+                            currentList = results;
+                            updateTable(results, favoritesOnly);
+
+                            // Update buttons
+                            button.css('background-color', '#4CAF50');
+                            otherButton.css('background-color', '#FFFFFF');
+                            lastUpdate = Date.now();
+                         }).fail(function() {
+                            alert('Failure trying to update buoy list.');
+                         });
+                } else {
+                    updateTable(currentList, favoritesOnly);
+
+                    // Update buttons
+                    button.css('background-color', '#4CAF50');
+                    otherButton.css('background-color', '#FFFFFF');
+                }
+                
+            };
+            
+            function updateTable(results, favoritesOnly) {            
+                // Clear table
+                $("#buoys tr:gt(0)").remove();
+                // Fill table with results
+                for (var i = 0; i < results.items.length; i++) {
+                    var val = results.items[i];
+                    if (!favoritesOnly || (favoritesOnly && val.favorite)) {
+                        var onclick = "addFavorite(this);";
+                        var src = "star_white_32.png";
+                        if (val.favorite) {
+                            onclick = "removeFavorite(this);";
+                            src = "star_gold_32.png";
+                        }
+                        var tr = $('<tr/>');
+                        tr.append("<td><img id = \"" + val.stationId + "\" src=" + src + " onclick=" + onclick + " alt=\"Add Favorite\"/></td>");
+                        tr.append("<td style=\"color: #0000FF\"><strong>" + val.title + "</strong></td>");
+                        $('table').append(tr);
+                        tr = $('<tr/>');
+                        tr.append("<td></td>");
+                        tr.append("<td>" + val.description + "</td>");
+                        $('table').append(tr); 
+                    }
+                }
+            }
+         
+            getBuoyData('all');
+        </script>
+    </head>
+    <body>
+        <input type="button" id="all" onclick="getBuoyData('all')" value="All Buoy's" style="background-color: #4CAF50">
+        <input type="button" id="favorites" onclick="getBuoyData('favorites')" value="Favorite Buoy's" style="background-color: #FFFFFF">
+        <br><br>
+        <table id="buoys">
+            <tr>
+                <th>Favorite</th>
+                <th style="min-width:500px">Latest Buoy Information</th>
+            </tr>
+        </table>
+    </body>
+</html>

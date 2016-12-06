@@ -1,0 +1,19 @@
+{
+    "name": "buoy-demo",
+    "version": "1.0.0",
+    "keywords": ["util", "functional", "server", "client", "browser"],
+    "author": "esalino",
+    "contributors": [],
+    "scripts": {
+	"test": "node node_modules/.bin/mocha"
+    },
+    "dependencies": {
+	"express": "^4.14.0",
+	"request": "^2.74.0",
+	"bluebird": "^3.4.0",
+	"xmldoc": "^0.5.1",
+	"lokijs": "^1.4.1",
+	"mocha": "^3.2.0",
+	"chai":"^3.5.0"
+    }
+}
