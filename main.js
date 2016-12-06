@@ -1,9 +1,8 @@
 var express = require("express");
 var Promise = require('bluebird');
 var request = Promise.promisifyAll(require('request'));
-var xmldoc = require('xmldoc');
-var loki = require('lokijs');
 var buoyHelper = require('./lib/modules/buoy-helper');
+var database = require('./lib/modules/database');
 
 var app = express();
 app.use(express.static(__dirname + "/public"));
@@ -13,16 +12,7 @@ var server = app.listen(process.env.PORT || 8080, function () {
     console.log("App now running on port", port);
 });
 
-// TODO - in memory loki works great for a demo.
-// replace with Mongo for a real world app.
-var db = new loki('loki.json');
-var users = db.addCollection('users');
-
-// Hard code user as we are not dealing with user
-// managment for this demo
-users.insert({email: 'test.user@gmail.com',
-    favorites: {}
-});
+var hardCodedUser = 'test.user@gmail.com';
 
 // TODO - In production, idealy every api would have the following:
 // logging/metrics for latency and availability (invalid request does not affect availability)
@@ -32,11 +22,11 @@ app.get("/buoy/list/", function (req, res) {
 
     // TODO - For demo just use hard coded user and rss search location and skip
     // user managment.
-    var user = users.findOne({ email:'test.user@gmail.com' });   
+    var user = database.findUser(hardCodedUser);
     var url = 'http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=40N&lon=73W&radius=100';
 
     request.getAsync(url, {timeout: 2000}).then(function (response) {
-         console.log(response);
+        console.log(response);
         var data = response.body;
         if (response.statusCode !== 200) {
             res.send(500, 'Internal Error');
@@ -55,32 +45,30 @@ app.get("/buoy/list/", function (req, res) {
 
 app.post("/buoy/favorite/add/:stationId", function (req, res) {
     try {
-        var stationId = req.params.stationId;
-        var user = users.findOne({ email:'test.user@gmail.com' });    
-        if (!user.favorites[stationId]) {
-            user.favorites[stationId] = 1;
-            users.update(user);
-        } 
+        var user = database.findUser(hardCodedUser);
+        if (!user) {
+            throw error('user:' + hardCodedUser + ' does not exist.');
+        }
+        database.addFavoriteBuoy(user, req.params.stationId);
         res.status(200).send();
-    } catch(err) {
+    } catch (err) {
         res.status(500).send();
         console.error(err);
     }
-    
+
 });
 
 app.post("/buoy/favorite/remove/:stationId", function (req, res) {
     try {
-        var stationId = req.params.stationId;
-        var user = users.findOne({ email:'test.user@gmail.com' }); 
-        if (user.favorites[stationId]) {
-            delete user.favorites[stationId];
-            users.update(user);
+        var user = database.findUser(hardCodedUser);
+        if (!user) {
+            throw error('user:' + hardCodedUser + ' does not exist.');
         }
+        database.removeFavoriteBuoy(user, req.params.stationId);
         res.status(200).send();
-    } catch(err) {
+    } catch (err) {
         res.status(500).send();
         console.error(err);
     }
-    
+
 });
