@@ -10,7 +10,10 @@
             var currentList;
             var lastUpdate;
             // Lets refresh if it's been more than 2 minutes
-            var timeout = 1000 * 60 * 2;
+            // TODO - for this demo it is easier to keep a client side copy
+            //        but for a real app with more api reuse it may be better
+            //        to build in server side cache and remove responsibility from clients
+            var buoyRefreshTimeout = 1000 * 60 * 2;
             
             var currentButtonId;
             
@@ -58,7 +61,8 @@
                     favoritesOnly = true;
                     otherButton = $('#all');
                 }
-                if (!lastUpdate || (Date.now() - lastUpdate > timeout)) {
+                // refresh data with api call if past timout else use local data
+                if (!lastUpdate || (Date.now() - lastUpdate > buoyRefreshTimeout)) {
                     // Call api
                     $.getJSON( 'buoy/list', function() {
                         }).done(function(results) {
