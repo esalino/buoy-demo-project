@@ -28,9 +28,8 @@ app.get("/buoy/list/", function (req, res) {
         console.error('user:' + hardCodedUser + ' does not exist.');
         next();
     }
-    var url = 'http://www.ndbc.noaa.gov/rss/ndbc_obs_search.php?lat=40N&lon=73W&radius=100';
 
-    request.getAsync(url, {timeout: 2000}).then(function (response) {
+    request.getAsync(user.buoyRssSearch, {timeout: 2000}).then(function (response) {
         console.log(response);
         var data = response.body;
         if (response.statusCode !== 200) {
